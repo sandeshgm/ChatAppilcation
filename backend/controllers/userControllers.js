@@ -1,116 +1,73 @@
 import User from "../models/userModels.js";
-import bcrypt from "bcryptjs";
-import { jwtToken } from "../utils/jsonWebToken.js";
+import Conversation from "../models/conversationModels.js";
 
-export const userRegister = async (req, res) => {
+export const getUserBySearch = async (req, res) => {
   try {
-    const { fullname, username, email, password, profilePic, gender } =
-      req.body;
+    const search = req.query.search || "";
+    const currentUserId = req.user._id;
+    const user = await User.find({
+      $and: [
+        {
+          $or: [
+            { username: { $regex: ".*" + search + ".*", $options: "i" } },
+            { fullname: { $regex: ".*" + search + ".*", $options: "i" } },
+          ],
+        },
+        {
+          _id: { $ne: currentUserId },
+        },
+      ],
+    })
+      .select("-password")
+      .select("-email");
 
-    //Checking user already exists or not
-    const user = await User.findOne({ $or: [{ username }, { email }] });
-    if (user) {
-      return res.status(400).json({
-        message: "User already exist",
-      });
-    }
-
-    //Hash password
-    const salt = bcrypt.genSaltSync(10);
-    const hashPassword = bcrypt.hashSync(password, salt);
-
-    //set default profile Pucture
-    const defaultProfilePic =
-      profilePic ||
-      (gender === "male"
-        ? "https://cdn-icons-png.flaticon.com/512/219/219970.png"
-        : "https://cdn-icons-png.flaticon.com/512/219/219969.png");
-
-    const newUser = new User({
-      fullname,
-      username,
-      email,
-      password: hashPassword,
-      gender,
-      profilePic: defaultProfilePic,
-    });
-
-    if (newUser) {
-      await newUser.save();
-      jwtToken(newUser._id, res);
-    } else {
-      res.status(400).json({
-        success: false,
-        message: "invalid user data",
-      });
-    }
-
-    res.status(201).json({
-      _id: newUser._id,
-      username: newUser.username,
-      fullname: newUser.fullname,
-      profilePic: newUser.profilePic,
-      email: newUser.email,
-      message: "User register successfull!",
-    });
-    
+    res.status(200).send(user);
   } catch (error) {
-    console.log("Registration error", error);
-    res.status(500).json({
+    res.status(500).send({
       success: false,
-      message: "Filled all data field ",
+      message: error,
     });
+    console.log("error: ", error);
   }
 };
 
-export const userLogin = async (req, res) => {
+export const getCurrentChatters = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(400).json({
-        message: "User not found. Please register first",
-      });
-    }
-
-    const comparePassword = bcrypt.compareSync(password, user.password || "");
-    if (!comparePassword) {
-      return res.status(400).json({
-        message: "email or password doesnot match",
-      });
-    }
-
-    jwtToken(user._id, res);
-
-    return res.status(200).json({
-      _id: user._id,
-      fullname: user.fullname,
-      username: user.username,
-      profilePic: user.profilePic,
-      email: user.email,
-      message: "User login successfull",
+    const currentUserId = req.user._id;
+    const currentChatters = await Conversation.find({
+      participants: currentUserId,
+    }).sort({
+      updatedAt: -1,
     });
-  } catch (error) {
-    console.log("error in login", error);
-    res.status(500).json({
-      message: "Server error",
-    });
-  }
-};
 
-export const userLogout = async (req, res) => {
-  try {
-    res.clearCookie("jwt", "", {
-      maxAge: 0,
-    }),
-      res.status(200).json({
-        message: "User logout successfully",
-      });
+    if (!currentChatters || currentChatters.length === 0)
+      return res.status(200).send([]);
+
+    const participantIDS = currentChatters.reduce((ids, conversation) => {
+      const otherParticipants = conversation.participants.filter(
+        (id) => id.toString() !== currentUserId.toString()
+      );
+      return [...ids, ...otherParticipants];
+    }, []);
+
+    const otherParticipantsIDS = participantIDS.filter(
+      (id) => id.toString() !== currentUserId.toString()
+    );
+
+    const user = await User.find({ _id: { $in: otherParticipantsIDS } })
+      .select("-password")
+      .select("-email");
+
+    const users = otherParticipantsIDS.map((id) =>
+      user.find((user) => user._id.toString() === id.toString())
+    );
+
+    res.status(200).send(users);
   } catch (error) {
-    res.status(500).json({
+    res.status(500).send({
       success: false,
-      message: "Server errror",
+      message: error,
     });
+    console.log("error: ", error);
   }
 };
