@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { FaSearch } from "react-icons/fa";
+import { IoIosArrowBack } from "react-icons/io";
+import { FiLogOut } from "react-icons/fi";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { userAuth } from "../../context/AuthContext";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const Sidebar = () => {
   const navigate = useNavigate();
-  const { authUser } = userAuth();
+  const { authUser, setAuthUser } = userAuth();
   const [searchInput, setSearchInput] = useState("");
   const [searchUser, setSearchuser] = useState([]);
   const [chatUser, setChatUser] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  //show user with where you chatted
   useEffect(() => {
     const chatUserHandler = async () => {
       setLoading(true);
@@ -34,8 +37,7 @@ const Sidebar = () => {
     chatUserHandler();
   }, []);
 
-  console.log(chatUser);
-
+  //show user from the search result
   const handleSearchSubmit = async (e) => {
     e.preventDefault();
     if (!searchInput.trim()) return;
@@ -59,13 +61,46 @@ const Sidebar = () => {
     }
   };
 
+  //show which user is selected
   const handleUserClick = (user) => {
     setSelectedUserId(user._id);
   };
-  console.log(searchUser);
+
+  //back from search result
+  const handleSearchBack = () => {
+    setSearchuser([]);
+    setSearchInput("");
+  };
+
+  //logout
+  const handleLogout = async () => {
+    const confirmLogout = window.prompt("type 'UserName' to Logout");
+    if (confirmLogout === authUser.username) {
+      setLoading(true);
+      try {
+        const logout = await axios.post("/api/auth/logout");
+        const data = logout.data;
+        if (data.success === false) {
+          setLoading(false);
+          console.log(data.message);
+        }
+        toast.info(data?.message);
+        localStorage.removeItem("authUser");
+        setAuthUser(null);
+        setLoading(false);
+        navigate("/login");
+      } catch (error) {
+        setLoading(false);
+        console.log("logout", error);
+      }
+    } else {
+      toast.info("Logout cancelled!");
+    }
+  };
 
   return (
-    <div className="h-full w-full px-4 py-2">
+    <div className="flex flex-col h-full px-4 py-2">
+      {/* Top bar */}
       <div className="mb-4 flex items-center gap-4">
         <form
           onSubmit={handleSearchSubmit}
@@ -96,51 +131,87 @@ const Sidebar = () => {
           className="h-10 w-10 rounded-full hover:scale-110 cursor-pointer transition-all"
         />
       </div>
+
       <div className="divider px-3"></div>
-      {searchUser?.length > 0 ? (
-        <></>
-      ) : (
-        <>
-          <div className="h-10 w-10 rounded-full hover:scale-110 cursor-pointer transition-all">
-            <div className="w-auto">
-              {chatUser.length === 0 ? (
-                <>
-                  <div className="font-bold items-center flex flex-col text-xl text-yellow-500">
-                    <h1>Why are you Alone!!🤔</h1>
-                    <h1>Search username to chat</h1>
+
+      {/* Users list */}
+      <div className="flex-grow overflow-y-auto space-y-2">
+        {searchUser?.length > 0 ? (
+          searchUser.map((user) => (
+            <div key={user._id} className="w-full">
+              <div
+                onClick={() => handleUserClick(user)}
+                className={`flex gap-3 items-center p-2 cursor-pointer transition-all w-full 
+                  ${
+                    selectedUserId === user?._id
+                      ? "bg-sky-500"
+                      : "hover:bg-sky-100"
+                  }`}
+              >
+                <div className="avatar">
+                  <div className="w-12 rounded-full">
+                    <img src={user?.profilePic} alt="user.img" />
                   </div>
-                </>
-              ) : (
-                <>
-                  {chatUser.map((user, index) => (
-                    <div key={user._id}>
-                      <div
-                        onClick={() => handleUserClick(user)}
-                        className={`flex gap-3 items-center rounded p-2 cursor-pointer
-                            ${
-                              selectedUserId === user?._id ? "bg-sky-500" : ""
-                            }`}
-                      >
-                        <div className="avatar">
-                          <div className="w-12 rounded-full">
-                            <img src={user?.profilePic} alt="user.img" />
-                          </div>
-                          <div className="flex flex-col flex-1">
-                            <p className="font-bold text-white-900">
-                              {user.username}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="divider px-3"></div>
-                    </div>
-                  ))}
-                </>
-              )}
+                </div>
+                <div className="flex flex-col flex-1">
+                  <p className=" text-black">{user.username}</p>
+                </div>
+              </div>
+              <div className="divider px-3"></div>
             </div>
+          ))
+        ) : chatUser.length === 0 ? (
+          <div className="font-bold items-center flex flex-col text-xl text-yellow-500 mt-4">
+            <h1>Why are you Alone!!🤔</h1>
+            <h1>Search username to chat</h1>
           </div>
-        </>
-      )}
+        ) : (
+          chatUser.map((user) => (
+            <div key={user._id} className="w-full">
+              <div
+                onClick={() => handleUserClick(user)}
+                className={`flex gap-3 items-center p-2 cursor-pointer transition-all w-full 
+                  ${
+                    selectedUserId === user?._id
+                      ? "bg-sky-500"
+                      : "hover:bg-sky-100"
+                  }`}
+              >
+                <div className="avatar">
+                  <div className="w-12 rounded-full">
+                    <img src={user?.profilePic} alt="user.img" />
+                  </div>
+                </div>
+                <div className="flex flex-col flex-1">
+                  <p className=" text-black">{user.username}</p>
+                </div>
+              </div>
+              <div className="divider px-3"></div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Bottom actions */}
+      <div className="pt-4 mt-auto">
+        {searchUser.length > 0 ? (
+          <div
+            className="flex items-center gap-2 cursor-pointer text-black hover:text-gray-700"
+            onClick={handleSearchBack}
+          >
+            <IoIosArrowBack size={22} />
+            <span className="text-sm font-medium">Back</span>
+          </div>
+        ) : (
+          <div
+            className="flex items-center gap-2 cursor-pointer text-black hover:text-red-600"
+            onClick={handleLogout}
+          >
+            <FiLogOut size={20} />
+            <span className="text-sm font-medium">Logout</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
