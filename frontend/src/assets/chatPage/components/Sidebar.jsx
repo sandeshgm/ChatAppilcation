@@ -6,8 +6,9 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { userAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import userConversation from "../../../zustand/userConversation";
 
-const Sidebar = () => {
+const Sidebar = ({ onSelectedUser }) => {
   const navigate = useNavigate();
   const { authUser, setAuthUser } = userAuth();
   const [searchInput, setSearchInput] = useState("");
@@ -15,6 +16,8 @@ const Sidebar = () => {
   const [chatUser, setChatUser] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { messages, selectedConversation, setSelectedConversation } =
+    userConversation();
 
   //show user with where you chatted
   useEffect(() => {
@@ -63,6 +66,8 @@ const Sidebar = () => {
 
   //show which user is selected
   const handleUserClick = (user) => {
+    onSelectedUser(user);
+    setSelectedConversation(user);
     setSelectedUserId(user._id);
   };
 
