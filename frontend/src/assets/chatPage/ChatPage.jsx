@@ -47,7 +47,7 @@ const ChatPage = () => {
     <div style={backgroundStyle}>
       <div
         className="flex w-full h-[90vh] max-w-6xl mx-2 rounded-xl
-        shadow-lg bg-white bg-opacity-0 backdrop-blur-lg border border-white/30
+        shadow-lg bg-opacity-0 backdrop-blur-lg border border-white/30
         overflow-hidden"
       >
         {/* Sidebar */}
@@ -66,9 +66,13 @@ const ChatPage = () => {
 
         {/* Message Container */}
         <div
-          className={`flex-auto bg-gray-200 ${
+          className={`flex-auto ${
             selectedUser ? "flex" : isMobile ? "hidden" : "flex"
           }`}
+          style={{
+            minWidth: "0", // Prevent the overflow on the right
+            flexGrow: 1, // Make it take up the remaining space
+          }}
         >
           <MessageContainer onBackUser={handleShowSideBar} />
         </div>
