@@ -5,8 +5,7 @@ import authRoutes from "./routes/authRoutes.js";
 import messageRoutes from "./routes/messagesRoutes.js";
 import userRouters from "./routes/userRoutes.js";
 import cookieParser from "cookie-parser";
-
-const app = express();
+import { app, server } from "./socket/Socket.js";
 
 dotenv.config();
 const PORT = process.env.PORT || 3003;
@@ -22,11 +21,10 @@ app.use("/api/auth", authRoutes);
 app.use("/api/message", messageRoutes);
 app.use("/api/user", userRouters);
 
-
 app.get("/", (req, res) => {
   res.send("Server is working");
 });
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Listening at ${PORT} `);
 });

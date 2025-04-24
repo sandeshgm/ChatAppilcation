@@ -27,7 +27,7 @@ export const getUserBySearch = async (req, res) => {
       success: false,
       message: error,
     });
-    console.log("error: ", error);
+   // console.log("error: ", error);
   }
 };
 
@@ -68,6 +68,6 @@ export const getCurrentChatters = async (req, res) => {
       success: false,
       message: error,
     });
-    console.log("error: ", error);
+    //console.log("error: ", error);
   }
 };

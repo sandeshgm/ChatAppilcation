@@ -8,6 +8,7 @@ import Register from "./assets/rergister/Register";
 import { AuthContextProvider } from "./assets/context/AuthContext";
 import { VerifyUser } from "./assets/utils/VerifyUser";
 import ChatPage from "./assets/chatPage/ChatPage";
+import { SocketContextProviver } from "./assets/context/SocketContext";
 
 const queryClient = new QueryClient();
 
@@ -19,13 +20,15 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <BrowserRouter>
             <AuthContextProvider>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route element={<VerifyUser />}>
-                  <Route path="/" element={<ChatPage />} />
-                </Route>
-              </Routes>
+              <SocketContextProviver>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route element={<VerifyUser />}>
+                    <Route path="/" element={<ChatPage />} />
+                  </Route>
+                </Routes>
+              </SocketContextProviver>
             </AuthContextProvider>
           </BrowserRouter>
         </QueryClientProvider>

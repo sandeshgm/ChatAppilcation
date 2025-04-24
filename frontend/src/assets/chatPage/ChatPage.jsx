@@ -22,34 +22,33 @@ const ChatPage = () => {
     backgroundSize: "cover",
     backgroundPosition: "center",
     minHeight: "100vh",
-    paddingTop: "2rem",
-    paddingBottom: "2rem",
+    padding: "1rem",
     display: "flex",
     justifyContent: "center",
+    alignItems: "center",
     color: "#fff",
   };
 
   return (
     <div style={backgroundStyle}>
       <div
-        className="flex justify-between w-full md:min-w-[550px]
-        md:max-w-[65%] px-2 h-[90vh] rounded-xl
-        shadow-lg bg-white bg-opacity-0 
-        backdrop-blur-lg border border-white/30"
+        className="flex w-full h-[90vh] max-w-6xl mx-2 rounded-xl
+        shadow-lg bg-white bg-opacity-0 backdrop-blur-lg border border-white/30
+        overflow-hidden"
       >
         <div
-          className={`w-full py-2 md:flex transition-all ${
-            isSidebarVisible ? "flex" : "hidden"
-          }`}
+          className={`${isSidebarVisible ? "w-full md:w-1/3" : "hidden"} 
+          transition-all duration-300 ease-in-out`}
         >
           <Sidebar onSelectedUser={handleUserSelect} />
         </div>
 
-        <div
-          className={`divider divider-horizontal px-3 hidden md:block  ${
-            isSidebarVisible ? "block" : "hidden"
-          }  `}
-        ></div>
+        {isSidebarVisible && (
+          <div className="hidden md:block w-px bg-gray-300/50"></div>
+        )}
+
+
+        {/*Message Container */}
         <div
           className={`flex-auto bg-gray-200 ${
             selectedUser ? "flex" : "hidden "

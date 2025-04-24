@@ -4,7 +4,7 @@ import User from "../models/userModels.js";
 export const isLogin = async (req, res, next) => {
   try {
     const token = req.cookies.jwt;
-    console.log(token);
+    //console.log(token);
 
     if (!token)
       return res.status(500).json({

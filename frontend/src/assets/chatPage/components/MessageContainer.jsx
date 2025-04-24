@@ -3,7 +3,10 @@ import userConversation from "../../../zustand/userConversation";
 import { userAuth } from "../../context/AuthContext";
 import { TiMessages } from "react-icons/ti";
 import { IoIosArrowBack } from "react-icons/io";
+import { IoSend } from "react-icons/io5";
 import axios from "axios";
+import { useSocketContext } from "../../context/SocketContext";
+import notify from "../../../assets/sound/messageNotification.mp3";
 
 const MessageContainer = ({ onBackUser }) => {
   const {
@@ -13,8 +16,30 @@ const MessageContainer = ({ onBackUser }) => {
     setSelectedConversation,
   } = userConversation();
   const { authUser, setAuthUser } = userAuth();
+  const { socket } = useSocketContext();
   const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendData, setSendData] = useState("");
   const lastMessageRef = useRef();
+
+  useEffect(() => {
+    if (!socket) return;
+    socket.on("newMessage", (newMessage) => {
+      const sound = new Audio(notify);
+      sound.play();
+      setMessage([...messages, newMessage]);
+    });
+
+    return () => {
+      socket?.off("newMessage");
+    };
+  }, [socket, setMessage, messages]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      lastMessageRef?.current?.scrollIntoView({ behaviour: "smooth" });
+    }, 100);
+  }, [messages]);
 
   //for getting messages when we clicked users or friends
   useEffect(() => {
@@ -37,6 +62,34 @@ const MessageContainer = ({ onBackUser }) => {
     };
     if (selectedConversation?._id) getMessages();
   }, [selectedConversation?._id, setMessage]);
+
+  const handleMessage = (e) => {
+    setSendData(e.target.value);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSending(true);
+    try {
+      const res = await axios.post(
+        `api/message/send/${selectedConversation._id}`,
+        { message: sendData }
+      );
+      console.log(res);
+      const data = await res.data;
+      // console.log(data.message);
+      if (data.success === false) {
+        setSending(false);
+        console.log(data);
+      }
+      setSending(false);
+      setSendData("");
+      setMessage([...messages, data.data]);
+    } catch (error) {
+      setSending(false);
+      console.log(error);
+    }
+  };
 
   return (
     <>
@@ -92,57 +145,88 @@ const MessageContainer = ({ onBackUser }) => {
                   <div
                     key={message?._id}
                     ref={lastMessageRef}
-                    className={`chat ${
+                    className={`chat mb-4 ${
                       message.senderId === authUser._id
-                        ? "chat-end"
-                        : "chat-start"
+                        ? "chat-end pr-2"
+                        : "chat-start pl-2"
                     }`}
                   >
                     <div className="chat-image avatar"></div>
                     <div
-                      className={`chat-bubble p-3 rounded-lg ${
+                      className={`flex flex-col ${
                         message.senderId === authUser._id
-                          ? "bg-sky-600 text-white"
-                          : "bg-gray-600 text-white"
-                      }  max-w-[80%]`}
+                          ? "items-end"
+                          : "items-start"
+                      }`}
                     >
-                      {message?.message}
-                    </div>
+                      <div
+                        className={`chat-bubble p-3 rounded-lg ${
+                          message.senderId === authUser._id
+                            ? "bg-sky-600 text-white"
+                            : "bg-gray-600 text-white"
+                        }`}
+                      >
+                        {message?.message}
+                      </div>
 
-                    {/* {console.log("Message:", message)}
-                    {console.log("Message createdAt:", message?.createdAt)} */}
-
-                    <div className="chat-footer text-[10px] opacity-80 text-black ml-2 py-2">
-                      {message?.createdAt ? (
-                        !isNaN(new Date(message?.createdAt).getTime()) ? (
-                          <>
-                            {new Intl.DateTimeFormat("en-IN", {
-                              weekday: "short",
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              timeZone: "Asia/Kathmandu",
-                            }).format(new Date(message?.createdAt))}
-                            <span className="ml-2">
+                      <div className="text-[10px] opacity-80 text-black mt-1">
+                        {message?.createdAt ? (
+                          !isNaN(new Date(message?.createdAt).getTime()) ? (
+                            <>
                               {new Intl.DateTimeFormat("en-IN", {
-                                hour: "numeric",
-                                minute: "numeric",
+                                weekday: "short",
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
                                 timeZone: "Asia/Kathmandu",
                               }).format(new Date(message?.createdAt))}
-                            </span>
-                          </>
+                              <span className="ml-2">
+                                {new Intl.DateTimeFormat("en-IN", {
+                                  hour: "numeric",
+                                  minute: "numeric",
+                                  timeZone: "Asia/Kathmandu",
+                                }).format(new Date(message?.createdAt))}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-red-500">Invalid Date</span>
+                          )
                         ) : (
-                          <span className="text-red-500">Invalid Date</span>
-                        )
-                      ) : (
-                        <span className="text-gray-500">
-                          Date not available
-                        </span>
-                      )}
+                          <span className="text-gray-500">
+                            Date not available
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
             </div>
+            <form
+              onSubmit={handleSubmit}
+              action=""
+              className="rounded-full text-black"
+            >
+              <div className="w-full rounded-full flex items-center bg-white">
+                <input
+                  type="text"
+                  value={sendData}
+                  onChange={handleMessage}
+                  required
+                  id="message"
+                  className="w-full bg-transparent outline-none px-4 rounded-full"
+                />
+                <button type="submit">
+                  {sending ? (
+                    <div className="loading loading-spinner"></div>
+                  ) : (
+                    <IoSend
+                      size={23}
+                      className="text-sky-700 cursor-pointer rounded-full bg-gray-800 w-10 h-auto p-1"
+                    />
+                  )}
+                </button>
+              </div>
+            </form>
           </>
         )}
       </div>

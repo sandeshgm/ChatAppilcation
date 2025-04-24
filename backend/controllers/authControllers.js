@@ -55,7 +55,7 @@ export const userRegister = async (req, res) => {
     });
     
   } catch (error) {
-    console.log("Registration error", error);
+    //console.log("Registration error", error);
     res.status(500).json({
       success: false,
       message: "Filled all data field ",
@@ -92,7 +92,7 @@ export const userLogin = async (req, res) => {
       message: "User login successfull",
     });
   } catch (error) {
-    console.log("error in login", error);
+    //console.log("error in login", error);
     res.status(500).json({
       message: "Server error",
     });
