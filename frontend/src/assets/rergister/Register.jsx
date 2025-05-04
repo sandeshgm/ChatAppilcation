@@ -6,6 +6,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { toast } from "react-toastify";
 import { Link, useNavigate } from "react-router-dom";
 import { userAuth } from "../context/AuthContext";
+import { generateRSAKeys } from "../utils/crypto";
 
 const schema = yup
   .object({
@@ -27,19 +28,42 @@ const schema = yup
 
 export default function Register() {
   const navigate = useNavigate();
-  const {authUser, setAuthUser} = userAuth();
+  const { authUser, setAuthUser } = userAuth();
 
   const mutation = useMutation({
     mutationFn: async (data) => {
       const res = await axios.post("/api/auth/register", data);
-      console.log(res.data);
       return res.data;
     },
-    onSuccess: (data) => {
-      toast.success(data?.message);
-      localStorage.setItem("authUser", JSON.stringify(data));
-      setAuthUser(data);
-      navigate("/login");
+    onSuccess: async (data) => {
+      try {
+        toast.success(data?.message);
+
+        // ✅ Save auth user in context + localStorage
+        localStorage.setItem("authUser", JSON.stringify(data));
+        setAuthUser(data);
+
+        // ✅ Generate RSA keys (asynchronously)
+        const { publicKey, privateKey } = await generateRSAKeys();
+
+        console.log("privateKey", privateKey);
+        // ✅ Save private key locally
+        try {
+          localStorage.setItem("privateKey", privateKey);
+        } catch (e) {
+          console.error("Failed to store private key", e);
+        }
+
+        // ✅ Send public key to backend
+        await axios.put("/api/user/public-key", { publicKey });
+
+        // ✅ Navigate to login
+        navigate("/login");
+      } catch (err) {
+        toast.error(
+          "Failed to save keys: " + (err.response?.data?.message || err.message)
+        );
+      }
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || "Registration failed!");
@@ -62,34 +86,35 @@ export default function Register() {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-lg bg-white p-8 rounded-lg shadow-md">
         <h1 className="text-3xl font-bold text-center mb-6">Sign Up</h1>
-
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          {/* Name Field */}
+          {/* Fullname */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Name
             </label>
             <input
               type="text"
-              className={`block w-full px-3 py-2 mt-1 border rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
-                errors.name ? "border-red-500" : "border-gray-300"
+              className={`block w-full px-3 py-2 mt-1 border rounded-lg shadow-sm sm:text-sm ${
+                errors.fullname ? "border-red-500" : "border-gray-300"
               }`}
               placeholder="Your Name"
               {...register("fullname")}
             />
-            {errors.name && (
-              <p className="mt-2 text-sm text-red-600">{errors.name.message}</p>
+            {errors.fullname && (
+              <p className="mt-2 text-sm text-red-600">
+                {errors.fullname.message}
+              </p>
             )}
           </div>
 
-          {/* Username Field */}
+          {/* Username */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Username
             </label>
             <input
               type="text"
-              className={`block w-full px-3 py-2 mt-1 border rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
+              className={`block w-full px-3 py-2 mt-1 border rounded-lg shadow-sm sm:text-sm ${
                 errors.username ? "border-red-500" : "border-gray-300"
               }`}
               placeholder="Your Username"
@@ -102,14 +127,14 @@ export default function Register() {
             )}
           </div>
 
-          {/* Email Field */}
+          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Email
             </label>
             <input
               type="email"
-              className={`block w-full px-3 py-2 mt-1 border rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
+              className={`block w-full px-3 py-2 mt-1 border rounded-lg shadow-sm sm:text-sm ${
                 errors.email ? "border-red-500" : "border-gray-300"
               }`}
               placeholder="your@email.com"
@@ -122,14 +147,14 @@ export default function Register() {
             )}
           </div>
 
-          {/* Password Field */}
+          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Password
             </label>
             <input
               type="password"
-              className={`block w-full px-3 py-2 mt-1 border rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
+              className={`block w-full px-3 py-2 mt-1 border rounded-lg shadow-sm sm:text-sm ${
                 errors.password ? "border-red-500" : "border-gray-300"
               }`}
               placeholder="••••••"
@@ -142,13 +167,13 @@ export default function Register() {
             )}
           </div>
 
-          {/* Gender Field */}
+          {/* Gender */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Gender
             </label>
             <select
-              className={`block w-full px-3 py-2 mt-1 border rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
+              className={`block w-full px-3 py-2 mt-1 border rounded-lg shadow-sm sm:text-sm ${
                 errors.gender ? "border-red-500" : "border-gray-300"
               }`}
               {...register("gender")}
@@ -169,30 +194,30 @@ export default function Register() {
             <input
               type="checkbox"
               {...register("rememberMe")}
-              className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+              className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
             />
             <label className="ml-2 block text-sm text-gray-900">
               Remember me
             </label>
           </div>
 
-          {/* Submit Button */}
+          {/* Submit */}
           <div>
             <button
               type="submit"
               disabled={mutation.isLoading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
             >
               {mutation.isLoading ? "Signing Up..." : "Register"}
             </button>
           </div>
 
-          {/* Sign In Link */}
+          {/* Login Link */}
           <p className="mt-6 text-center text-sm text-gray-600">
             Already have an account?{" "}
             <Link
               to="/login"
-              className="font-medium text-indigo-600 hover:text-indigo-500"
+              className="text-indigo-600 hover:text-indigo-500 font-medium"
             >
               Login
             </Link>

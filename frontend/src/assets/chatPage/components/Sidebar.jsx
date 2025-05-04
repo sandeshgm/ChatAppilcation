@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import { userAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import userConversation from "../../../zustand/userConversation";
+import { useSocketContext } from "../../context/SocketContext";
 
 const Sidebar = ({ onSelectedUser }) => {
   const navigate = useNavigate();
@@ -15,9 +16,15 @@ const Sidebar = ({ onSelectedUser }) => {
   const [searchUser, setSearchuser] = useState([]);
   const [chatUser, setChatUser] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [newMessageUsers, setNewMessageUsers] = useState("");
   const [loading, setLoading] = useState(false);
   const { messages, selectedConversation, setSelectedConversation } =
     userConversation();
+  const { onlineUser, socket } = useSocketContext();
+
+  const nowOnline = chatUser.map((user) => user._id);
+  //chat function
+  const isOnline = nowOnline.map((userId) => onlineUser.includes(userId));
 
   //show user with where you chatted
   useEffect(() => {
@@ -142,7 +149,7 @@ const Sidebar = ({ onSelectedUser }) => {
       {/* Users list */}
       <div className="flex-grow overflow-y-auto space-y-2">
         {searchUser?.length > 0 ? (
-          searchUser.map((user) => (
+          searchUser.map((user, index) => (
             <div key={user._id} className="w-full">
               <div
                 onClick={() => handleUserClick(user)}
@@ -153,7 +160,8 @@ const Sidebar = ({ onSelectedUser }) => {
                       : "hover:bg-sky-100"
                   }`}
               >
-                <div className="avatar">
+                {/*Socket is Online */}
+                <div className={`avatar ${isOnline[index] ? "online" : " "}`}>
                   <div className="w-12 rounded-full">
                     <img src={user?.profilePic} alt="user.img" />
                   </div>
@@ -171,7 +179,7 @@ const Sidebar = ({ onSelectedUser }) => {
             <h1>Search username to chat</h1>
           </div>
         ) : (
-          chatUser.map((user) => (
+          chatUser.map((user, index) => (
             <div key={user._id} className="w-full">
               <div
                 onClick={() => handleUserClick(user)}
@@ -182,7 +190,7 @@ const Sidebar = ({ onSelectedUser }) => {
                       : "hover:bg-sky-100"
                   }`}
               >
-                <div className="avatar">
+                <div className={`avatar ${isOnline[index] ? "online" : ""}`}>
                   <div className="w-12 rounded-full">
                     <img src={user?.profilePic} alt="user.img" />
                   </div>
@@ -190,6 +198,14 @@ const Sidebar = ({ onSelectedUser }) => {
                 <div className="flex flex-col flex-1">
                   <p className=" text-black">{user.username}</p>
                 </div>
+
+                {/*notification */}
+                {/* <div>
+                  <div className="founded-full bg-green-700 text-sm text-white px-[4px}">
+                    +1
+                  </div>
+                  
+                </div> */}
               </div>
               <div className="divider px-3"></div>
             </div>

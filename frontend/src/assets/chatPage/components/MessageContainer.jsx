@@ -7,6 +7,7 @@ import { IoSend } from "react-icons/io5";
 import axios from "axios";
 import { useSocketContext } from "../../context/SocketContext";
 import notify from "../../../assets/sound/messageNotification.mp3";
+import { JSEncrypt } from "jsencrypt";
 
 const MessageContainer = ({ onBackUser }) => {
   const {
@@ -15,25 +16,53 @@ const MessageContainer = ({ onBackUser }) => {
     selectedConversation,
     setSelectedConversation,
   } = userConversation();
-  const { authUser, setAuthUser } = userAuth();
+  const { authUser, setAuthUser, privateKey } = userAuth();
   const { socket } = useSocketContext();
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendData, setSendData] = useState("");
   const lastMessageRef = useRef();
 
+  const encryptMessage = (message, publicKey) => {
+    const encrypt = new JSEncrypt();
+    encrypt.setPublicKey(publicKey);
+    return encrypt.encrypt(message);
+  };
+
+  // Helper: Decrypt message with user's private key
+  const decryptMessage = (encryptedMessage) => {
+    const privateKey = localStorage.getItem("privateKey");
+    if (!privateKey) {
+      console.error("Private key is missing.");
+      return "🔒 Cannot decrypt (missing private key)";
+    }
+
+    const decrypt = new JSEncrypt();
+    decrypt.setPrivateKey(privateKey);
+    const decryptedText = decrypt.decrypt(encryptedMessage);
+
+    if (!decryptedText) {
+      console.error("Decryption failed for message:", encryptedMessage);
+      return "🔒 Decryption failed";
+    }
+    return decryptedText;
+  };
+
   useEffect(() => {
     if (!socket) return;
-    socket.on("newMessage", (newMessage) => {
+    const handleNewMessage = (newMessage) => {
+      console.log("received message from socket", newMessage);
+
       const sound = new Audio(notify);
       sound.play();
-      setMessage([...messages, newMessage]);
-    });
-
-    return () => {
-      socket?.off("newMessage");
+      const decryptedText = decryptMessage(newMessage.message);
+      setMessage([...messages, { ...newMessage, message: decryptedText }]);
     };
-  }, [socket, setMessage, messages]);
+    socket.on("newMessage", handleNewMessage);
+    return () => {
+      socket?.off("newMessage", handleNewMessage);
+    };
+  });
 
   useEffect(() => {
     setTimeout(() => {
@@ -48,12 +77,18 @@ const MessageContainer = ({ onBackUser }) => {
       try {
         const get = await axios.get(`/api/message/${selectedConversation._id}`);
         const data = await get.data;
-        if (data.success === false) {
-          setLoading(false);
-          console.log(data.message);
+
+        if (Array.isArray(data)) {
+          const decryptedMessages = data.map((msg) => ({
+            ...msg,
+            message: decryptMessage(msg.message),
+          }));
+          setMessage(decryptedMessages);
+        } else {
+          console.log("expected an array of messagesm but received:", data);
         }
+
         setLoading(false);
-        setMessage(data);
       } catch (error) {
         setLoading(false);
         console.log("error at getMessage Message container", error);
@@ -68,24 +103,39 @@ const MessageContainer = ({ onBackUser }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!sendData.trim()) return;
+
     setSending(true);
+
     try {
-      const res = await axios.post(
-        `api/message/send/${selectedConversation._id}`,
-        { message: sendData }
-      );
-      console.log(res);
-      const data = await res.data;
-      if (data.success === false) {
+      const recipientPublicKey = selectedConversation.publicKey;
+      if (!recipientPublicKey) {
+        console.error("Recipient does not have a public key.");
         setSending(false);
-        console.log(data);
+        return;
       }
-      setSending(false);
+
+      // Encrypt message
+      const encryptedMessage = encryptMessage(sendData, recipientPublicKey);
+
+      // Send encrypted message to backend
+      const res = await axios.post(
+        `/api/message/send/${selectedConversation._id}`,
+        { message: encryptedMessage }
+      );
+
+      const data = res.data;
+
+      // Append message to local state
+      setMessage([
+        ...messages,
+        { ...data.data, message: sendData, encryptedMessage },
+      ]);
       setSendData("");
-      setMessage([...messages, data.data]);
     } catch (error) {
+      console.error("Failed to send message:", error);
+    } finally {
       setSending(false);
-      console.log(error);
     }
   };
 
@@ -137,6 +187,7 @@ const MessageContainer = ({ onBackUser }) => {
               </p>
             )}
             {!loading &&
+              Array.isArray(messages) &&
               messages?.length > 0 &&
               messages?.map((message) => (
                 <div

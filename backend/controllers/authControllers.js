@@ -33,6 +33,7 @@ export const userRegister = async (req, res) => {
       password: hashPassword,
       gender,
       profilePic: defaultProfilePic,
+      publicKey,
     });
 
     if (newUser) {
@@ -53,7 +54,6 @@ export const userRegister = async (req, res) => {
       email: newUser.email,
       message: "User register successfull!",
     });
-    
   } catch (error) {
     //console.log("Registration error", error);
     res.status(500).json({
