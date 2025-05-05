@@ -43,21 +43,7 @@ export default function Register() {
         localStorage.setItem("authUser", JSON.stringify(data));
         setAuthUser(data);
 
-        // ✅ Generate RSA keys (asynchronously)
-        const { publicKey, privateKey } = await generateRSAKeys();
-
-        console.log("privateKey", privateKey);
-        // ✅ Save private key locally
-        try {
-          localStorage.setItem("privateKey", privateKey);
-        } catch (e) {
-          console.error("Failed to store private key", e);
-        }
-
-        // ✅ Send public key to backend
-        await axios.put("/api/user/public-key", { publicKey });
-
-        // ✅ Navigate to login
+        // Navigate to login
         navigate("/login");
       } catch (err) {
         toast.error(
@@ -78,8 +64,17 @@ export default function Register() {
     resolver: yupResolver(schema),
   });
 
-  const onSubmit = (data) => {
-    mutation.mutate(data);
+  const onSubmit = async (formData) => {
+    try {
+      const { publicKey, privateKey } = await generateRSAKeys();
+      localStorage.setItem("privateKey", privateKey);
+
+      const payload = { ...formData, publicKey };
+
+      mutation.mutate(payload);
+    } catch (err) {
+      toast.error("Key generation failed: " + err.message);
+    }
   };
 
   return (

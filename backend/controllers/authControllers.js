@@ -4,8 +4,15 @@ import { jwtToken } from "../utils/jsonWebToken.js";
 
 export const userRegister = async (req, res) => {
   try {
-    const { fullname, username, email, password, profilePic, gender } =
-      req.body;
+    const {
+      fullname,
+      username,
+      email,
+      password,
+      profilePic,
+      gender,
+      publicKey,
+    } = req.body;
 
     //Checking user already exists or not
     const user = await User.findOne({ $or: [{ username }, { email }] });

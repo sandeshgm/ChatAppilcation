@@ -34,7 +34,7 @@ const MessageContainer = ({ onBackUser }) => {
     const privateKey = localStorage.getItem("privateKey");
     if (!privateKey) {
       console.error("Private key is missing.");
-      return "🔒 Cannot decrypt (missing private key)";
+      return " Cannot decrypt (missing private key)";
     }
 
     const decrypt = new JSEncrypt();
@@ -43,7 +43,7 @@ const MessageContainer = ({ onBackUser }) => {
 
     if (!decryptedText) {
       console.error("Decryption failed for message:", encryptedMessage);
-      return "🔒 Decryption failed";
+      return " Decryption failed";
     }
     return decryptedText;
   };
@@ -208,7 +208,7 @@ const MessageContainer = ({ onBackUser }) => {
                     }`}
                   >
                     <div
-                      className={`chat-bubble p-3 rounded-lg ${
+                      className={`chat-bubble p-3 rounded-lg break-words max-w-xs sm:max-w-md md:max-w-lg whitespace-pre-wrap ${
                         message.senderId === authUser._id
                           ? "bg-sky-600 text-white"
                           : "bg-gray-600 text-white"

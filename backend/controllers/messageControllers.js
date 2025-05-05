@@ -2,7 +2,6 @@ import Conversation from "../models/conversationModels.js";
 import Message from "../models/messageModel.js";
 import { getReceiverSocketId, io } from "../socket/Socket.js";
 import User from "../models/userModels.js";
-import NodeRSA from "node-rsa";
 
 export const sendMessage = async (req, res) => {
   try {
@@ -19,17 +18,6 @@ export const sendMessage = async (req, res) => {
       });
     }
 
-    // const rsa = new NodeRSA();
-    // rsa.importKey(receiver.publicKey, "public");
-
-    // //  Encrypt the message using recipient's public key
-    // const encryptedMessage = rsa.encrypt(message, "base64");
-    // if (!encryptedMessage) {
-    //   return res.status(500).json({
-    //     success: false,
-    //     message: "Encryption failed",
-    //   });
-    // }
     let chats = await Conversation.findOne({
       participants: { $all: [senderId, receiverId] },
     });

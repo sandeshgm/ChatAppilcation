@@ -71,20 +71,3 @@ export const getCurrentChatters = async (req, res) => {
     //console.log("error: ", error);
   }
 };
-
-// controllers/userController.js
-export const savePublicKey = async (req, res) => {
-  const userId = req.user._id;
-  const { publicKey } = req.body;
-
-  if (!publicKey) {
-    return res.status(400).json({ message: "Public key is required." });
-  }
-
-  try {
-    await User.findByIdAndUpdate(userId, { publicKey });
-    res.status(200).json({ message: "Public key saved successfully." });
-  } catch (error) {
-    res.status(500).json({ message: "Failed to save public key." });
-  }
-};

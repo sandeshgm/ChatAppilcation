@@ -2,13 +2,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { userAuth } from "../context/AuthContext";
+import { generateRSAKeys } from "../utils/crypto"; // Important for login key gen
 
-// 🔐 Yup validation schema
 const schema = yup.object({
   email: yup.string().email("Invalid email").required("Email is required"),
   password: yup.string().required("Password is required"),
@@ -16,18 +15,28 @@ const schema = yup.object({
 
 export default function Login() {
   const navigate = useNavigate();
-  const { authUser, setAuthUser } = userAuth();
+  const { setAuthUser } = userAuth();
 
   const mutation = useMutation({
     mutationFn: async (data) => {
       const res = await axios.post("/api/auth/login", data);
-      console.log(res.data);
       return res.data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast.success(data.message);
       localStorage.setItem("authUser", JSON.stringify(data));
       setAuthUser(data);
+
+      // // ✅ Regenerate keypair on login
+
+      // const username = data?.username;
+      // const storedPrivateKey = localStorage.getItem(`privateKey-${username}`);
+      // if (storedPrivateKey) {
+      //   localStorage.setItem("privateKey", storedPrivateKey); // Session key
+      // } else {
+      //   toast.error("Private key not found for this user on this device.");
+      //   // Optional: Redirect to key-recovery or warning page
+      // }
       navigate("/");
     },
     onError: (error) => {

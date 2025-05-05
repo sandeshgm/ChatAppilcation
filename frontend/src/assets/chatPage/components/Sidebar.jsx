@@ -97,9 +97,11 @@ const Sidebar = ({ onSelectedUser }) => {
           console.log(data.message);
         }
         toast.info(data?.message);
+
         localStorage.removeItem("authUser");
         setAuthUser(null);
         setLoading(false);
+
         navigate("/login");
       } catch (error) {
         setLoading(false);
