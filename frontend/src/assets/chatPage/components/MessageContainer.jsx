@@ -23,13 +23,15 @@ const MessageContainer = ({ onBackUser }) => {
   const [sendData, setSendData] = useState("");
   const lastMessageRef = useRef();
 
+
+  //Encrypr message with user's public key
   const encryptMessage = (message, publicKey) => {
     const encrypt = new JSEncrypt();
     encrypt.setPublicKey(publicKey);
     return encrypt.encrypt(message);
   };
 
-  // Helper: Decrypt message with user's private key
+  // Decrypt message with user's private key
   const decryptMessage = (encryptedMessage) => {
     const privateKey = localStorage.getItem("privateKey");
     if (!privateKey) {
@@ -37,6 +39,8 @@ const MessageContainer = ({ onBackUser }) => {
       return " Cannot decrypt (missing private key)";
     }
 
+
+    //decrypt the encrypted messages here
     const decrypt = new JSEncrypt();
     decrypt.setPrivateKey(privateKey);
     const decryptedText = decrypt.decrypt(encryptedMessage);
@@ -48,10 +52,12 @@ const MessageContainer = ({ onBackUser }) => {
     return decryptedText;
   };
 
+
+  //implementing socket io for real time chat application
   useEffect(() => {
     if (!socket) return;
     const handleNewMessage = (newMessage) => {
-      console.log("received message from socket", newMessage);
+      //console.log("received message from socket", newMessage);
 
       const sound = new Audio(notify);
       sound.play();

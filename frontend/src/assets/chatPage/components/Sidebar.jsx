@@ -18,13 +18,28 @@ const Sidebar = ({ onSelectedUser }) => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [newMessageUsers, setNewMessageUsers] = useState("");
   const [loading, setLoading] = useState(false);
-  const { messages, selectedConversation, setSelectedConversation } =
-    userConversation();
+  const {
+    messages,
+    setMessages,
+    selectedConversation,
+    setSelectedConversation,
+  } = userConversation();
   const { onlineUser, socket } = useSocketContext();
 
-  const nowOnline = chatUser.map((user) => user._id);
+  //const nowOnline = chatUser.map((user) => user._id);
   //chat function
-  const isOnline = nowOnline.map((userId) => onlineUser.includes(userId));
+  //const isOnline = nowOnline.map((userId) => onlineUser.includes(userId));
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleNewMessage = (newMessage) => {
+      console.log("received message from socket", newMessage);
+      setNewMessageUsers(newMessage);
+    };
+    return () => {
+      socket?.off("newMessage", handleNewMessage);
+    };
+  }, [socket, messages]);
 
   //show user with where you chatted
   useEffect(() => {
@@ -76,6 +91,7 @@ const Sidebar = ({ onSelectedUser }) => {
     onSelectedUser(user);
     setSelectedConversation(user);
     setSelectedUserId(user._id);
+    setNewMessageUsers("");
   };
 
   //back from search result
@@ -99,7 +115,9 @@ const Sidebar = ({ onSelectedUser }) => {
         toast.info(data?.message);
 
         localStorage.removeItem("authUser");
+        localStorage.removeItem("privateKey");
         setAuthUser(null);
+
         setLoading(false);
 
         navigate("/login");
@@ -163,7 +181,7 @@ const Sidebar = ({ onSelectedUser }) => {
                   }`}
               >
                 {/*Socket is Online */}
-                <div className={`avatar ${isOnline[index] ? "online" : " "}`}>
+                <div className="avatar">
                   <div className="w-12 rounded-full">
                     <img src={user?.profilePic} alt="user.img" />
                   </div>
@@ -192,7 +210,7 @@ const Sidebar = ({ onSelectedUser }) => {
                       : "hover:bg-sky-100"
                   }`}
               >
-                <div className={`avatar ${isOnline[index] ? "online" : ""}`}>
+                <div className="avatar">
                   <div className="w-12 rounded-full">
                     <img src={user?.profilePic} alt="user.img" />
                   </div>
@@ -203,10 +221,14 @@ const Sidebar = ({ onSelectedUser }) => {
 
                 {/*notification */}
                 {/* <div>
-                  <div className="founded-full bg-green-700 text-sm text-white px-[4px}">
-                    +1
-                  </div>
-                  
+                  {newMessageUsers.receiverId === authUser._id &&
+                  newMessageUsers.senderId === user._id ? (
+                    <div className="founded-full bg-green-700 text-sm text-white px-[4px}">
+                      +1
+                    </div>
+                  ) : (
+                    <></>
+                  )}
                 </div> */}
               </div>
               <div className="divider px-3"></div>

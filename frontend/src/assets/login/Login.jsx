@@ -6,37 +6,76 @@ import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { userAuth } from "../context/AuthContext";
-import { generateRSAKeys } from "../utils/crypto"; // Important for login key gen
+import JSEncrypt from "jsencrypt";
+import { generateRSAKeys } from "../utils/crypto";
+import { useState } from "react";
 
+// Validation schema using Yup
 const schema = yup.object({
   email: yup.string().email("Invalid email").required("Email is required"),
   password: yup.string().required("Password is required"),
 });
 
 export default function Login() {
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { setAuthUser } = userAuth();
 
+  // Mutation for login
   const mutation = useMutation({
     mutationFn: async (data) => {
       const res = await axios.post("/api/auth/login", data);
       return res.data;
     },
     onSuccess: async (data) => {
-      toast.success(data.message);
+      console.log("user details", data._id);
+
+      // Retrieve the private key from localStorage
+      const privateKey = localStorage.getItem("privateKey");
+
+      if (!privateKey) {
+        // Private key is missing, regenerate a new key pair
+        try {
+          const { publicKey, privateKey } = await generateRSAKeys();
+          setLoading(true);
+          if (publicKey && privateKey) {
+            localStorage.setItem("privateKey", privateKey);
+            console.log("new public key:", publicKey);
+            console.log("new private key:", privateKey);
+
+            await axios.post("/api/auth/updatePublicKey", {
+              userId: data._id,
+              publicKey,
+            });
+          } else {
+            toast.warn(
+              "Private key missing. A new key pair has been generated."
+            );
+          }
+          setLoading(false);
+          // Save the new private key to localStorage
+          // localStorage.setItem("privateKey", privateKey);
+          // console.log("new public key:", publicKey);
+          // console.log("new private key:", privateKey);
+
+          // Send the public key to the backend and update the user record
+        } catch (err) {
+          toast.error("Key regeneration failed: " + err.message);
+          return; // Prevent proceeding if the key generation fails
+        }
+      }
+
+      //console.log(data);
+
       localStorage.setItem("authUser", JSON.stringify(data));
+
+      // Log the stored user
+      const storedUser = JSON.parse(localStorage.getItem("authUser"));
+      console.log("stored User at login:", storedUser);
+
+      // Set the authUser in context
       setAuthUser(data);
-
-      // // ✅ Regenerate keypair on login
-
-      // const username = data?.username;
-      // const storedPrivateKey = localStorage.getItem(`privateKey-${username}`);
-      // if (storedPrivateKey) {
-      //   localStorage.setItem("privateKey", storedPrivateKey); // Session key
-      // } else {
-      //   toast.error("Private key not found for this user on this device.");
-      //   // Optional: Redirect to key-recovery or warning page
-      // }
+      toast.success(data.message);
       navigate("/");
     },
     onError: (error) => {
@@ -44,6 +83,7 @@ export default function Login() {
     },
   });
 
+  // React Hook Form setup
   const {
     register,
     handleSubmit,

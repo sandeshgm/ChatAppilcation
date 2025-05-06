@@ -39,7 +39,7 @@ export default function Register() {
       try {
         toast.success(data?.message);
 
-        // ✅ Save auth user in context + localStorage
+        // Save auth user in context + localStorage
         localStorage.setItem("authUser", JSON.stringify(data));
         setAuthUser(data);
 

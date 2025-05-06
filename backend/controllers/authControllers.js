@@ -121,3 +121,40 @@ export const userLogout = async (req, res) => {
     });
   }
 };
+
+export const updatePublicKey = async (req, res) => {
+  try {
+    const { userId, publicKey } = req.body;
+
+    if (!userId || !publicKey) {
+      return res.status(400).send({
+        success: false,
+        message: "User ID and public key are required.",
+      });
+    }
+
+    // Find user and update the public key
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).send({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    // Update the user's public key in the database
+    user.publicKey = publicKey;
+    await user.save();
+
+    res.status(200).send({
+      success: true,
+      message: "Public key updated successfully.",
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: error.message || "Error updating public key.",
+    });
+  }
+};
