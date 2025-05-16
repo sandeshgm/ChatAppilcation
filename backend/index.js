@@ -6,6 +6,9 @@ import messageRoutes from "./routes/messagesRoutes.js";
 import userRouters from "./routes/userRoutes.js";
 import cookieParser from "cookie-parser";
 import { app, server } from "./socket/Socket.js";
+import path from "path";
+
+const __dirname = path.resolve();
 
 dotenv.config();
 const PORT = process.env.PORT || 3003;
@@ -20,6 +23,12 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/message", messageRoutes);
 app.use("/api/user", userRouters);
+
+app.use(express.static(path.join(__dirname, "frontend/dist")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
+});
 
 app.get("/", (req, res) => {
   res.send("Server is working");
