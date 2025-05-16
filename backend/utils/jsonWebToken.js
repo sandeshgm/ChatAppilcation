@@ -11,7 +11,7 @@ export const jwtToken = async (userId, res) => {
     httpOnly: true,
     maxAge: 30 * 24 * 60 * 60 * 1000,
     expire: expiresAt,
-    sameSite:"strict",
-    secure: process.env.SECURE !== "development",
+    sameSite: "strict",
+    secure: true,
   });
 };

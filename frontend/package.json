@@ -14,6 +14,7 @@
     "@tailwindcss/vite": "^4.1.4",
     "@tanstack/react-query": "^5.74.4",
     "axios": "^1.8.4",
+    "chatapplicationproject": "file:..",
     "daisyui": "^5.0.27",
     "jsencrypt": "^3.3.2",
     "react": "^19.0.0",
