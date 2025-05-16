@@ -39,7 +39,6 @@ export default function Register() {
       try {
         toast.success(data?.message);
 
-        // Save auth user in context + localStorage
         localStorage.setItem("authUser", JSON.stringify(data));
         setAuthUser(data);
 
@@ -80,7 +79,7 @@ export default function Register() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-lg bg-white p-8 rounded-lg shadow-md">
-        <h1 className="text-3xl font-bold text-center mb-6">Sign Up</h1>
+        <h1 className="text-3xl font-bold text-center mb-6">Register</h1>
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {/* Fullname */}
           <div>

@@ -30,11 +30,9 @@ export default function Login() {
     onSuccess: async (data) => {
       console.log("user details", data._id);
 
-      // Retrieve the private key from localStorage
       const privateKey = localStorage.getItem("privateKey");
 
       if (!privateKey) {
-        // Private key is missing, regenerate a new key pair
         try {
           const { publicKey, privateKey } = await generateRSAKeys();
           setLoading(true);
@@ -83,7 +81,6 @@ export default function Login() {
     },
   });
 
-  // React Hook Form setup
   const {
     register,
     handleSubmit,
@@ -137,7 +134,7 @@ export default function Login() {
             type="submit"
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-md"
           >
-            Sign In
+            Log in
           </button>
 
           <p className="text-center text-sm text-gray-600">

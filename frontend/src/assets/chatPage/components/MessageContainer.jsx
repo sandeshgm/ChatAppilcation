@@ -132,7 +132,6 @@ const MessageContainer = ({ onBackUser }) => {
 
       const data = res.data;
 
-      // Append message to local state
       setMessage([
         ...messages,
         { ...data.data, message: sendData, encryptedMessage },

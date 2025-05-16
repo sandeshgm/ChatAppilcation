@@ -9,7 +9,7 @@ export const sendMessage = async (req, res) => {
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
-    //  Get recipient's public key
+    // recipient's public key
     const receiver = await User.findById(receiverId);
     if (!receiver || !receiver.publicKey) {
       return res.status(400).json({
@@ -22,7 +22,7 @@ export const sendMessage = async (req, res) => {
       participants: { $all: [senderId, receiverId] },
     });
 
-    // If no chat exists, create a new one
+    
     if (!chats) {
       chats = await Conversation.create({
         participants: [senderId, receiverId],
@@ -37,7 +37,7 @@ export const sendMessage = async (req, res) => {
       conversationId: chats._id,
     });
 
-    // Save message ID in the conversation
+    // Save message id in the conversation
     if (newMessage) {
       chats.messages.push(newMessage._id);
     }
@@ -69,7 +69,7 @@ export const sendMessage = async (req, res) => {
 export const getMessages = async (req, res) => {
   try {
     const { id: receiverId } = req.params;
-    const senderId = req.user._id; // Fixed: Access user ID correctly
+    const senderId = req.user._id; 
 
     const chats = await Conversation.findOne({
       participants: { $all: [senderId, receiverId] },
