@@ -5,7 +5,7 @@ import authRoutes from "./routes/authRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
 import userRouters from "./routes/userRoutes.js";
 import cookieParser from "cookie-parser";
-import { app, server } from "./socket/Socket.js";
+import { app, server } from "./socket/socket.js";
 import path from "path";
 
 const __dirname = path.resolve();

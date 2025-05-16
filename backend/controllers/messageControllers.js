@@ -1,6 +1,6 @@
 import Conversation from "../models/conversationModels.js";
 import Message from "../models/messageModel.js";
-import { getReceiverSocketId, io } from "../socket/Socket.js";
+import { getReceiverSocketId, io } from "../socket/socket.js";
 import User from "../models/userModels.js";
 
 export const sendMessage = async (req, res) => {
@@ -22,7 +22,6 @@ export const sendMessage = async (req, res) => {
       participants: { $all: [senderId, receiverId] },
     });
 
-    
     if (!chats) {
       chats = await Conversation.create({
         participants: [senderId, receiverId],
@@ -69,7 +68,7 @@ export const sendMessage = async (req, res) => {
 export const getMessages = async (req, res) => {
   try {
     const { id: receiverId } = req.params;
-    const senderId = req.user._id; 
+    const senderId = req.user._id;
 
     const chats = await Conversation.findOne({
       participants: { $all: [senderId, receiverId] },
