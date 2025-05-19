@@ -150,7 +150,7 @@ const MessageContainer = ({ onBackUser }) => {
         </div>
       ) : (
         <>
-          <div className="flex justify-between gap-1 bg-sky-600 px-2 rounded-lg h-12 mb-4">
+          {/* <div className="flex justify-between gap-1 bg-sky-600 px-2 rounded-lg h-12 mb-4">
             <div className="flex gap-2 justify-between items-center w-full">
               <div className="md:hidden ml-1 self-center">
                 <button
@@ -168,12 +168,36 @@ const MessageContainer = ({ onBackUser }) => {
                     alt=""
                   />
                 </div>
-                <span className="text-gray-950 self-center text-xl font-bold">
+                <span className="text-gray-950  text-center text-xl font-bold">
                   {selectedConversation?.username}
                 </span>
               </div>
             </div>
+          </div> */}
+          <div className="relative bg-sky-600 px-2 rounded-lg h-12 mb-4 flex items-center justify-center">
+            {/* Back button - left aligned (absolute) */}
+            <div className="absolute left-2 md:hidden">
+              <button
+                onClick={() => onBackUser(true)}
+                className="bg-black rounded-full px-2 py-1"
+              >
+                <IoIosArrowBack size={24} />
+              </button>
+            </div>
+
+            {/* Profile pic and username - centered */}
+            <div className="flex gap-2">
+              <img
+                className="rounded-full w-10 h-10 cursor-pointer"
+                src={selectedConversation?.profilePic}
+                alt=""
+              />
+              <span className="text-gray-950 text-xl font-bold">
+                {selectedConversation?.username}
+              </span>
+            </div>
           </div>
+
           <div className="flex-1 overflow-y-auto px-2">
             {loading && (
               <div className="flex w-full h-full flex-col items-center justify-center gap-4 bg-transparent">

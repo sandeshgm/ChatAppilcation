@@ -131,12 +131,13 @@ const Sidebar = ({ onSelectedUser }) => {
   };
 
   return (
-    <div className="flex flex-col h-full px-4 py-2">
+    <div className="flex flex-col h-full px-4 py-2 border-r-2 border-gray-300">
       {/* Top bar */}
       <div className="mb-4 flex items-center gap-4">
         <form
           onSubmit={handleSearchSubmit}
           className="flex items-center bg-white rounded-full px-3 py-1 shadow-md transition-all flex-grow"
+          style={{ width: "70%" }}
         >
           <input
             value={searchInput}
@@ -156,12 +157,6 @@ const Sidebar = ({ onSelectedUser }) => {
             )}
           </button>
         </form>
-        <img
-          onClick={() => navigate(`/profile/${authUser?._id}`)}
-          src={authUser?.profilePic}
-          alt="profile"
-          className="h-10 w-10 rounded-full hover:scale-110 cursor-pointer transition-all"
-        />
       </div>
 
       <div className="divider px-3"></div>
