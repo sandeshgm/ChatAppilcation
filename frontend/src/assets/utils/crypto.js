@@ -1,4 +1,3 @@
-import base64js from "base64-js";
 // Helper: GCD
 
 function gcd(a, b) {
@@ -19,18 +18,13 @@ function modInverse(a, m) {
   return x1 < 0n ? x1 + m0 : x1;
 }
 
-function base64ToString(base64) {
-  const bytes = base64js.toByteArray(base64);
-  return new TextDecoder().decode(bytes);
-}
-
 // Modular exponentiation
 function modPow(base, exponent, modulus) {
   let result = 1n;
-  base %= modulus;
+  base = base %= modulus;
   while (exponent > 0n) {
     if (exponent % 2n === 1n) result = (result * base) % modulus;
-    exponent >>= 1n;
+    exponent = exponent / 2n;
     base = (base * base) % modulus;
   }
   return result;
@@ -48,9 +42,9 @@ function isPrime(n) {
 }
 
 // Generate a small random prime
-function generateSmallPrime() {
+function generateSmallPrime(start = 1000n) {
   while (true) {
-    let num = BigInt(Math.floor(Math.random() * 100) + 100);
+    let num = start + BigInt(Math.floor(Math.random() * +1000));
     if (isPrime(num)) return num;
   }
 }
@@ -83,7 +77,12 @@ export const encryptMessage = (publicKey, message) => {
   const n = BigInt(nStr);
   return Array.from(message)
     .map((ch) => {
-      const m = BigInt(ch.charCodeAt(0));
+      const m = BigInt(ch.codePointAt(0));
+      if (m >= n) {
+        throw new Error(
+          `Character code ${m} is too large for the current RSA modulus ${n}`
+        );
+      }
       return modPow(m, e, n).toString();
     })
     .join(",");
@@ -91,24 +90,17 @@ export const encryptMessage = (publicKey, message) => {
 
 //Decrypt using private key (format: "d:n")
 export const decryptMessage = (privateKey, encryptedMessage) => {
-  // Try decoding base64 first — if fails, fallback to original string
-  let decodedMessage;
-  try {
-    decodedMessage = base64ToString(encryptedMessage);
-  } catch (error) {
-    decodedMessage = encryptedMessage;
-  }
-
   const [dStr, nStr] = privateKey.split(":");
   const d = BigInt(dStr);
   const n = BigInt(nStr);
 
-  return decodedMessage
+  return encryptedMessage
     .split(",")
     .map((part) => {
       const c = BigInt(part);
       const m = modPow(c, d, n);
-      return String.fromCharCode(Number(m));
+      console.log("Decrypted code:", m.toString());
+      return String.fromCodePoint(Number(m));
     })
     .join("");
 };

@@ -24,11 +24,8 @@ const Sidebar = ({ onSelectedUser }) => {
     selectedConversation,
     setSelectedConversation,
   } = userConversation();
-  const { onlineUser, socket } = useSocketContext();
+  const { socket } = useSocketContext();
 
-  //const nowOnline = chatUser.map((user) => user._id);
-  //chat function
-  //const isOnline = nowOnline.map((userId) => onlineUser.includes(userId));
 
   useEffect(() => {
     if (!socket) return;
@@ -129,6 +126,8 @@ const Sidebar = ({ onSelectedUser }) => {
       toast.info("Logout cancelled!");
     }
   };
+  console.log("searchUser data:", searchUser);
+  console.log("chatUser data:", chatUser);
 
   return (
     <div className="flex flex-col h-full px-4 py-2 border-r-2 border-gray-300">

@@ -128,8 +128,13 @@ const MessageContainer = ({ onBackUser }) => {
 
       setMessage([
         ...messages,
-        { ...data.data, message: sendData, encryptedMessage },
+        {
+          ...data.data,
+          message: sendData,
+          encryptedMessage,
+        },
       ]);
+
       setSendData("");
     } catch (error) {
       console.error("Failed to send message:", error);
