@@ -8,7 +8,8 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://sgm-chatapp.onrender.com",
+        //target: "https://sgm-chatapp.onrender.com",
+        target: "http://localhost:3003",
         secure: false,
       },
     },

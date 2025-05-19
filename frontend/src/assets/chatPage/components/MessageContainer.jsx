@@ -7,7 +7,10 @@ import { IoSend } from "react-icons/io5";
 import axios from "axios";
 import { useSocketContext } from "../../context/SocketContext";
 import notify from "../../../assets/sound/messageNotification.mp3";
-import { JSEncrypt } from "jsencrypt";
+import {
+  encryptMessage as rsaEncrypt,
+  decryptMessage as rsaDecrypt,
+} from "../../utils/crypto";
 
 const MessageContainer = ({ onBackUser }) => {
   const {
@@ -23,41 +26,32 @@ const MessageContainer = ({ onBackUser }) => {
   const [sendData, setSendData] = useState("");
   const lastMessageRef = useRef();
 
-
   //Encrypr message with user's public key
   const encryptMessage = (message, publicKey) => {
-    const encrypt = new JSEncrypt();
-    encrypt.setPublicKey(publicKey);
-    return encrypt.encrypt(message);
+    return rsaEncrypt(publicKey, message);
   };
 
   // Decrypt message with user's private key
   const decryptMessage = (encryptedMessage) => {
-    const privateKey = localStorage.getItem("privateKey");
+    console.log("Private key:", privateKey);
     if (!privateKey) {
       console.error("Private key is missing.");
       return " Cannot decrypt (missing private key)";
     }
 
-
-    //decrypt the encrypted messages here
-    const decrypt = new JSEncrypt();
-    decrypt.setPrivateKey(privateKey);
-    const decryptedText = decrypt.decrypt(encryptedMessage);
-
-    if (!decryptedText) {
-      console.error("Decryption failed for message:", encryptedMessage);
-      return " Decryption failed";
+    try {
+      return rsaDecrypt(privateKey, encryptedMessage);
+    } catch (error) {
+      console.error("Decryption failed:", error);
+      return "Decryption failed";
     }
-    return decryptedText;
   };
-
 
   //implementing socket io for real time chat application
   useEffect(() => {
     if (!socket) return;
     const handleNewMessage = (newMessage) => {
-      //console.log("received message from socket", newMessage);
+      console.log("received message from socket", newMessage);
 
       const sound = new Audio(notify);
       sound.play();
@@ -72,7 +66,7 @@ const MessageContainer = ({ onBackUser }) => {
 
   useEffect(() => {
     setTimeout(() => {
-      lastMessageRef?.current?.scrollIntoView({ behaviour: "smooth" });
+      lastMessageRef?.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
   }, [messages]);
 
