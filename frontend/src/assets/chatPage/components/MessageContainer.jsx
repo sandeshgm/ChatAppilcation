@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import userConversation from "../../../zustand/userConversation";
-import { userAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { TiMessages } from "react-icons/ti";
 import { IoIosArrowBack } from "react-icons/io";
 import { IoSend } from "react-icons/io5";
@@ -19,7 +19,7 @@ const MessageContainer = ({ onBackUser }) => {
     selectedConversation,
     setSelectedConversation,
   } = userConversation();
-  const { authUser, setAuthUser, privateKey } = userAuth();
+  const { authUser, setAuthUser, privateKey } = useAuth();
   const { socket } = useSocketContext();
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -33,6 +33,7 @@ const MessageContainer = ({ onBackUser }) => {
 
   // Decrypt message with user's private key
   const decryptMessage = (encryptedMessage) => {
+    const privateKey = localStorage.getItem("privateKey");
     console.log("Private key:", privateKey);
     if (!privateKey) {
       console.error("Private key is missing.");

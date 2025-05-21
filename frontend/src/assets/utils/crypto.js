@@ -42,9 +42,9 @@ function isPrime(n) {
 }
 
 // Generate a small random prime
-function generateSmallPrime(start = 1000n) {
+function generatePrime(start = 1_000_000n) {
   while (true) {
-    let num = start + BigInt(Math.floor(Math.random() * +1000));
+    let num = start + BigInt(Math.floor(Math.random() * +100_000));
     if (isPrime(num)) return num;
   }
 }
@@ -53,8 +53,8 @@ function generateSmallPrime(start = 1000n) {
 export const generateRSAKeys = () =>
   new Promise((resolve) => {
     setTimeout(() => {
-      const p = generateSmallPrime();
-      const q = generateSmallPrime();
+      const p = generatePrime();
+      const q = generatePrime();
       const n = p * q;
       const phi = (p - 1n) * (q - 1n);
 
@@ -75,14 +75,25 @@ export const encryptMessage = (publicKey, message) => {
   const [eStr, nStr] = publicKey.split(":");
   const e = BigInt(eStr);
   const n = BigInt(nStr);
-  return Array.from(message)
-    .map((ch) => {
-      const m = BigInt(ch.codePointAt(0));
-      if (m >= n) {
-        throw new Error(
-          `Character code ${m} is too large for the current RSA modulus ${n}`
-        );
-      }
+
+  const encoder = new TextEncoder(); // Converts string to UTF-8 bytes
+  const bytes = encoder.encode(message);
+
+  // return Array.from(message)
+  //   .map((ch) => {
+  //     const m = BigInt(ch.codePointAt(0));
+  //     if (m >= n) {
+  //       throw new Error(
+  //         `Character code ${m} is too large for the current RSA modulus ${n}`
+  //       );
+  //     }
+  //     return modPow(m, e, n).toString();
+  //   })
+  //   .join(",");
+
+  return Array.from(bytes)
+    .map((byte) => {
+      const m = BigInt(byte);
       return modPow(m, e, n).toString();
     })
     .join(",");
@@ -94,13 +105,36 @@ export const decryptMessage = (privateKey, encryptedMessage) => {
   const d = BigInt(dStr);
   const n = BigInt(nStr);
 
-  return encryptedMessage
-    .split(",")
-    .map((part) => {
-      const c = BigInt(part);
-      const m = modPow(c, d, n);
-      console.log("Decrypted code:", m.toString());
-      return String.fromCodePoint(Number(m));
-    })
-    .join("");
+  // return encryptedMessage
+  //   .split(",")
+  //   .map((part) => {
+  //     const c = BigInt(part);
+  //     const m = modPow(c, d, n);
+  //     console.log("Decrypted code:", m.toString());
+
+  //     const code = Number(m);
+  //     if (code > 0x10ffff) {
+  //       throw new Error(
+  //         `Invalid decrypted code point ${code}. RSA keys may be too small.`
+  //       );
+  //     }
+
+  //     return String.fromCodePoint(code);
+  //   })
+  //   .join("");
+
+  const bytes = encryptedMessage.split(",").map((part) => {
+    const c = BigInt(part);
+    const m = modPow(c, d, n);
+    const byte = Number(m);
+
+    if (byte < 0 || byte > 255) {
+      throw new Error(`Decrypted byte ${byte} is invalid.`);
+    }
+
+    return byte;
+  });
+
+  const decoder = new TextDecoder(); // Decodes UTF-8 byte array to string
+  return decoder.decode(new Uint8Array(bytes));
 };

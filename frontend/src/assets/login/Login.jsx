@@ -5,8 +5,7 @@ import * as yup from "yup";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { userAuth } from "../context/AuthContext";
-import JSEncrypt from "jsencrypt";
+import { useAuth } from "../context/AuthContext";
 import { generateRSAKeys } from "../utils/crypto";
 import { useState } from "react";
 
@@ -19,7 +18,7 @@ const schema = yup.object({
 export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { setAuthUser } = userAuth();
+  const { setAuthUser } = useAuth();
 
   // Mutation for login
   const mutation = useMutation({

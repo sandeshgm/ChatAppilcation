@@ -4,14 +4,14 @@ import { IoIosArrowBack } from "react-icons/io";
 import { FiLogOut } from "react-icons/fi";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { userAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import userConversation from "../../../zustand/userConversation";
 import { useSocketContext } from "../../context/SocketContext";
 
 const Sidebar = ({ onSelectedUser }) => {
   const navigate = useNavigate();
-  const { authUser, setAuthUser } = userAuth();
+  const { authUser, setAuthUser } = useAuth();
   const [searchInput, setSearchInput] = useState("");
   const [searchUser, setSearchuser] = useState([]);
   const [chatUser, setChatUser] = useState([]);

@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { toast } from "react-toastify";
 import { Link, useNavigate } from "react-router-dom";
-import { userAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
 import { generateRSAKeys } from "../utils/crypto";
 
 const schema = yup
@@ -28,7 +28,7 @@ const schema = yup
 
 export default function Register() {
   const navigate = useNavigate();
-  const { authUser, setAuthUser } = userAuth();
+  const { authUser, setAuthUser } = useAuth();
 
   const mutation = useMutation({
     mutationFn: async (data) => {

@@ -6,7 +6,7 @@ import {
   useState,
 } from "react";
 import io from "socket.io-client";
-import { userAuth } from "./AuthContext";
+import { useAuth } from "./AuthContext";
 
 const SocketContext = createContext();
 
@@ -17,12 +17,12 @@ export const useSocketContext = () => {
 export const SocketContextProviver = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [onlineUser, setOnlineUser] = useState([]);
-  const { authUser } = userAuth();
+  const { authUser } = useAuth();
 
   useEffect(() => {
     if (authUser) {
-      //const socket = io("https://sgm-chatapp.onrender.com", {
-      const socket = io("http://localhost:3003/", {
+      const socket = io("https://sgm-chatapp.onrender.com", {
+        // const socket = io("http://localhost:3003/", {
         query: {
           userId: authUser?._id,
         },
