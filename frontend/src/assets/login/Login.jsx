@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import { generateRSAKeys } from "../utils/crypto";
 import { useState } from "react";
+import Spinner from "../chatPage/components/Spinner";
 
 // Validation schema using Yup
 const schema = yup.object({
@@ -28,7 +29,7 @@ export default function Login() {
     },
     onSuccess: async (data) => {
       console.log("user details", data._id);
-
+      setLoading(true);
       const privateKey = localStorage.getItem("privateKey");
 
       if (!privateKey) {
@@ -37,8 +38,8 @@ export default function Login() {
           setLoading(true);
           if (publicKey && privateKey) {
             localStorage.setItem("privateKey", privateKey);
-            console.log("new public key:", publicKey);
-            console.log("new private key:", privateKey);
+            //console.log("new public key:", publicKey);
+            //console.log("new private key:", privateKey);
 
             await axios.post("/api/auth/updatePublicKey", {
               userId: data._id,
@@ -85,6 +86,8 @@ export default function Login() {
     handleSubmit,
     formState: { errors },
   } = useForm({ resolver: yupResolver(schema) });
+
+  if (loading) return <Spinner />;
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">

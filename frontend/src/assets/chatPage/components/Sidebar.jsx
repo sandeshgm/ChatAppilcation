@@ -26,7 +26,6 @@ const Sidebar = ({ onSelectedUser }) => {
   } = userConversation();
   const { socket } = useSocketContext();
 
-
   useEffect(() => {
     if (!socket) return;
     const handleNewMessage = (newMessage) => {
@@ -59,7 +58,7 @@ const Sidebar = ({ onSelectedUser }) => {
     chatUserHandler();
   }, []);
 
-  //show user from the search result
+  // handle search submit
   const handleSearchSubmit = async (e) => {
     e.preventDefault();
     if (!searchInput.trim()) return;
@@ -71,15 +70,22 @@ const Sidebar = ({ onSelectedUser }) => {
         setLoading(false);
         console.log(data.message);
       }
-      setLoading(false);
+      if (data.length === 0) {
+        toast.info("User Not Found");
+      } else {
+        setSearchuser(data);
+      }
+
       if (data.length === 0) {
         toast.info("User Not Found");
       } else {
         setSearchuser(data);
       }
     } catch (error) {
-      setLoading(false);
+      toast.error("Search request failed");
       console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -131,11 +137,21 @@ const Sidebar = ({ onSelectedUser }) => {
 
   return (
     <div className="flex flex-col h-full px-4 py-2 border-r-2 border-gray-300">
+      {loading && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-auto">
+    <div className="absolute inset-0 backdrop-blur-sm bg-white/30"></div>
+    <div className="relative">
+      <div className="loading loading-spinner loading-lg text-black"></div>
+    </div>
+  </div>
+)}
+
+
       {/* Top bar */}
       <div className="mb-4 flex items-center gap-4">
-        <form
+        {/* <form
           onSubmit={handleSearchSubmit}
-          className="flex items-center bg-white rounded-full px-3 py-1 shadow-md transition-all flex-grow"
+          className="flex items-center bg-white rounded-full px-2 py-1 shadow-md w-full sm:max-w-sm"
           style={{ width: "70%" }}
         >
           <input
@@ -151,6 +167,29 @@ const Sidebar = ({ onSelectedUser }) => {
           >
             {loading ? (
               <span className="loading loading-spinner loading-sm text-white"></span>
+            ) : (
+              <FaSearch />
+            )}
+          </button>
+        </form> */}
+
+        <form onSubmit={handleSearchSubmit} className="relative w-full">
+          <input
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            type="text"
+            className="w-full pl-4 pr-10 py-2 text-black rounded-full bg-white shadow-md placeholder-gray-500 focus:outline-none"
+            placeholder="Search user"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className={`absolute right-2 top-1/2 -translate-y-1/2 text-sky-700 hover:text-gray-950 ${
+              loading ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+            }`}
+          >
+            {loading ? (
+              <span className="loading loading-spinner loading-sm text-sky-700"></span>
             ) : (
               <FaSearch />
             )}
@@ -243,8 +282,11 @@ const Sidebar = ({ onSelectedUser }) => {
           </div>
         ) : (
           <div
-            className="flex items-center gap-2 cursor-pointer text-black hover:text-red-600"
             onClick={handleLogout}
+            disabled={loading}
+            className={`flex items-center gap-2 text-black hover:text-red-600 ${
+              loading ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+            }`}
           >
             <FiLogOut size={20} />
             <span className="text-sm font-medium">Logout</span>

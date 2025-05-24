@@ -46,7 +46,7 @@ const ChatPage = () => {
   return (
     <div style={backgroundStyle}>
       <div
-        className="flex w-full h-[90vh] max-w-6xl mx-2 rounded-xl
+        className="flex w-full h-[80vh] max-w-6xl mx-2 rounded-xl
         shadow-lg bg-opacity-0 backdrop-blur-lg border border-white/30
         overflow-hidden"
       >

@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 import axios from "axios";
 import * as yup from "yup";
 import { useForm } from "react-hook-form";
@@ -7,6 +8,7 @@ import { toast } from "react-toastify";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { generateRSAKeys } from "../utils/crypto";
+import Spinner from "../chatPage/components/Spinner";
 
 const schema = yup
   .object({
@@ -29,6 +31,7 @@ const schema = yup
 export default function Register() {
   const navigate = useNavigate();
   const { authUser, setAuthUser } = useAuth();
+  const [loading, setLoading] = useState(false);
 
   const mutation = useMutation({
     mutationFn: async (data) => {
@@ -42,8 +45,12 @@ export default function Register() {
         localStorage.setItem("authUser", JSON.stringify(data));
         setAuthUser(data);
 
+        setLoading(true);
         // Navigate to login
-        navigate("/login");
+        setTimeout(() => {
+          navigate("/login");
+        }, 1000);
+        //navigate("/login");
       } catch (err) {
         toast.error(
           "Failed to save keys: " + (err.response?.data?.message || err.message)
@@ -75,6 +82,8 @@ export default function Register() {
       toast.error("Key generation failed: " + err.message);
     }
   };
+
+  if (loading) return <Spinner message="Redirecting to login..." />;
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
