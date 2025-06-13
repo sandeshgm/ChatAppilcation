@@ -51,14 +51,42 @@ const MessageContainer = ({ onBackUser }) => {
   //implementing socket io for real time chat application
   useEffect(() => {
     if (!socket) return;
+    // const handleNewMessage = (newMessage) => {
+    //   console.log("received message from socket", newMessage);
+
+    //   const sound = new Audio(notify);
+    //   sound.play();
+    //   const decryptedText = decryptMessage(newMessage.message);
+    //   setMessage([...messages, { ...newMessage, message: decryptedText }]);
+    // };
+
     const handleNewMessage = (newMessage) => {
       console.log("received message from socket", newMessage);
 
       const sound = new Audio(notify);
       sound.play();
-      const decryptedText = decryptMessage(newMessage.message);
-      setMessage([...messages, { ...newMessage, message: decryptedText }]);
+
+      if (newMessage.senderId !== authUser._id) {
+        // If the message is from someone else, decrypt it
+        const decryptedText = decryptMessage(newMessage.message);
+        setMessage([...messages, { ...newMessage, message: decryptedText }]);
+      } else {
+        // If the message is from the sender (self), fetch the plain text from localStorage
+        const localKey = `messages_${selectedConversation._id}_${authUser._id}`;
+        const localMessages = JSON.parse(localStorage.getItem(localKey)) || [];
+
+        const localMessage = localMessages.find(
+          (msg) => msg._id === newMessage._id
+        );
+
+        const plainText = localMessage
+          ? localMessage.message
+          : "Message not found";
+
+        setMessage([...messages, { ...newMessage, message: plainText }]);
+      }
     };
+
     socket.on("newMessage", handleNewMessage);
     return () => {
       socket?.off("newMessage", handleNewMessage);
@@ -102,6 +130,48 @@ const MessageContainer = ({ onBackUser }) => {
     setSendData(e.target.value);
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   if (!sendData.trim()) return;
+
+  //   setSending(true);
+
+  //   try {
+  //     const recipientPublicKey = selectedConversation.publicKey;
+  //     if (!recipientPublicKey) {
+  //       console.error("Recipient does not have a public key.");
+  //       setSending(false);
+  //       return;
+  //     }
+
+  //     // Encrypt message
+  //     const encryptedMessage = encryptMessage(sendData, recipientPublicKey);
+
+  //     // Send encrypted message to backend
+  //     const res = await axios.post(
+  //       `/api/message/send/${selectedConversation._id}`,
+  //       { message: encryptedMessage }
+  //     );
+
+  //     const data = res.data;
+
+  //     setMessage([
+  //       ...messages,
+  //       {
+  //         ...data.data,
+  //         message: sendData,
+  //         encryptedMessage,
+  //       },
+  //     ]);
+
+  //     setSendData("");
+  //   } catch (error) {
+  //     console.error("Failed to send message:", error);
+  //   } finally {
+  //     setSending(false);
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!sendData.trim()) return;
@@ -127,6 +197,19 @@ const MessageContainer = ({ onBackUser }) => {
 
       const data = res.data;
 
+      // Save sender's message to localStorage using the correct _id from the server
+      const localKey = `messages_${selectedConversation._id}_${authUser._id}`;
+      const existingMessages = JSON.parse(localStorage.getItem(localKey)) || [];
+      const newMessage = {
+        _id: data.data._id, // ✅ Use server-provided ID
+        senderId: authUser._id,
+        message: sendData, // Plain text message
+        createdAt: data.data.createdAt, // Optional: use server time
+      };
+      const updatedMessages = [...existingMessages, newMessage];
+      localStorage.setItem(localKey, JSON.stringify(updatedMessages));
+
+      // Add message to state
       setMessage([
         ...messages,
         {
@@ -215,68 +298,90 @@ const MessageContainer = ({ onBackUser }) => {
                 Send a message to start Conversation
               </p>
             )}
+            {/* {!loading &&
+              Array.isArray(messages) &&
+              messages?.length > 0 &&
+              messages?.map((message) => ( */}
             {!loading &&
               Array.isArray(messages) &&
               messages?.length > 0 &&
-              messages?.map((message) => (
-                <div
-                  key={message?._id}
-                  ref={lastMessageRef}
-                  className={`chat mb-4 ${
-                    message.senderId === authUser._id
-                      ? "chat-end pr-0"
-                      : "chat-start pl-0"
-                  }`}
-                >
-                  <div className="chat-image avatar"></div>
+              messages
+                ?.map((message) => {
+                  if (message.senderId === authUser._id) {
+                    // Fetch sender's message from localStorage
+                    const localKey = `messages_${selectedConversation._id}_${authUser._id}`;
+                    const localMessages =
+                      JSON.parse(localStorage.getItem(localKey)) || [];
+                    // Try to find this message by _id or createdAt
+                    const localMessage = localMessages.find(
+                      (msg) => msg._id === message._id
+                    );
+                    if (localMessage) {
+                      return { ...message, message: localMessage.message };
+                    }
+                  }
+                  // Return as is for receiver's message (already decrypted)
+                  return message;
+                })
+                .map((message) => (
                   <div
-                    className={`flex flex-col ${
+                    key={message?._id}
+                    ref={lastMessageRef}
+                    className={`chat mb-4 ${
                       message.senderId === authUser._id
-                        ? "items-end"
-                        : "items-start"
+                        ? "chat-end pr-0"
+                        : "chat-start pl-0"
                     }`}
                   >
+                    <div className="chat-image avatar"></div>
                     <div
-                      className={`chat-bubble p-3 rounded-lg break-words max-w-xs sm:max-w-md md:max-w-lg whitespace-pre-wrap ${
+                      className={`flex flex-col ${
                         message.senderId === authUser._id
-                          ? "bg-sky-600 text-white"
-                          : "bg-gray-600 text-white"
+                          ? "items-end"
+                          : "items-start"
                       }`}
                     >
-                      {message?.message}
-                    </div>
+                      <div
+                        className={`chat-bubble p-3 rounded-lg break-words max-w-xs sm:max-w-md md:max-w-lg whitespace-pre-wrap ${
+                          message.senderId === authUser._id
+                            ? "bg-sky-600 text-white"
+                            : "bg-gray-600 text-white"
+                        }`}
+                      >
+                        {message?.message}
+                      </div>
 
-                    <div className="text-[10px] opacity-80 text-black mt-1">
-                      {message?.createdAt ? (
-                        !isNaN(new Date(message?.createdAt).getTime()) ? (
-                          <>
-                            {new Intl.DateTimeFormat("en-IN", {
-                              weekday: "short",
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              timeZone: "Asia/Kathmandu",
-                            }).format(new Date(message?.createdAt))}
-                            <span className="ml-2">
+                      <div className="text-[10px] opacity-80 text-black mt-1">
+                        {message?.createdAt ? (
+                          !isNaN(new Date(message?.createdAt).getTime()) ? (
+                            <>
                               {new Intl.DateTimeFormat("en-IN", {
-                                hour: "numeric",
-                                minute: "numeric",
+                                weekday: "short",
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
                                 timeZone: "Asia/Kathmandu",
                               }).format(new Date(message?.createdAt))}
-                            </span>
-                          </>
+                              <span className="ml-2">
+                                {new Intl.DateTimeFormat("en-IN", {
+                                  hour: "numeric",
+                                  minute: "numeric",
+                                  timeZone: "Asia/Kathmandu",
+                                }).format(new Date(message?.createdAt))}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-red-500">Invalid Date</span>
+                          )
                         ) : (
-                          <span className="text-red-500">Invalid Date</span>
-                        )
-                      ) : (
-                        <span className="text-gray-500">
-                          Date not available
-                        </span>
-                      )}
+                          <span className="text-gray-500">
+                            Date not available
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
           </div>
           <form
             onSubmit={handleSubmit}

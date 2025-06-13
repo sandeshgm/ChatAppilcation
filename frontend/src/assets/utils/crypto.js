@@ -42,9 +42,10 @@ function isPrime(n) {
 }
 
 // Generate a small random prime
-function generatePrime(start = 1_000_000n) {
+
+function generatePrime(start = 2n, range = 1000n) {
   while (true) {
-    let num = start + BigInt(Math.floor(Math.random() * +100_000));
+    let num = start + BigInt(Math.floor(Math.random() * Number(range)));
     if (isPrime(num)) return num;
   }
 }
