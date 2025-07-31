@@ -5,7 +5,7 @@ function gcd(a, b) {
   return a;
 }
 
-// Modular inverse using Extended Euclidean Algorithm
+// Modular inverse
 function modInverse(a, m) {
   let m0 = m,
     x0 = 0n,
@@ -21,7 +21,7 @@ function modInverse(a, m) {
 // Modular exponentiation
 function modPow(base, exponent, modulus) {
   let result = 1n;
-  base = base %= modulus;
+  base = base % modulus;
   while (exponent > 0n) {
     if (exponent % 2n === 1n) result = (result * base) % modulus;
     exponent = exponent / 2n;
@@ -30,7 +30,7 @@ function modPow(base, exponent, modulus) {
   return result;
 }
 
-// Naive prime checker
+// Check pirme or not
 function isPrime(n) {
   if (n < 2n) return false;
   if (n === 2n) return true;
@@ -50,7 +50,7 @@ function generatePrime(start = 2n, range = 1000n) {
   }
 }
 
-//Asynchronous RSA Key Generation (simulate non-blocking)
+//RSA Key Generation
 export const generateRSAKeys = () =>
   new Promise((resolve) => {
     setTimeout(() => {
@@ -68,7 +68,7 @@ export const generateRSAKeys = () =>
         publicKey: `${e.toString()}:${n.toString()}`,
         privateKey: `${d.toString()}:${n.toString()}`,
       });
-    }, 0); // simulate async
+    }, 0);
   });
 
 //Encrypt using public key (format: "e:n")
@@ -77,20 +77,8 @@ export const encryptMessage = (publicKey, message) => {
   const e = BigInt(eStr);
   const n = BigInt(nStr);
 
-  const encoder = new TextEncoder(); // Converts string to UTF-8 bytes
+  const encoder = new TextEncoder();
   const bytes = encoder.encode(message);
-
-  // return Array.from(message)
-  //   .map((ch) => {
-  //     const m = BigInt(ch.codePointAt(0));
-  //     if (m >= n) {
-  //       throw new Error(
-  //         `Character code ${m} is too large for the current RSA modulus ${n}`
-  //       );
-  //     }
-  //     return modPow(m, e, n).toString();
-  //   })
-  //   .join(",");
 
   return Array.from(bytes)
     .map((byte) => {
@@ -100,29 +88,11 @@ export const encryptMessage = (publicKey, message) => {
     .join(",");
 };
 
-//Decrypt using private key (format: "d:n")
+//Decrypt using private key
 export const decryptMessage = (privateKey, encryptedMessage) => {
   const [dStr, nStr] = privateKey.split(":");
   const d = BigInt(dStr);
   const n = BigInt(nStr);
-
-  // return encryptedMessage
-  //   .split(",")
-  //   .map((part) => {
-  //     const c = BigInt(part);
-  //     const m = modPow(c, d, n);
-  //     console.log("Decrypted code:", m.toString());
-
-  //     const code = Number(m);
-  //     if (code > 0x10ffff) {
-  //       throw new Error(
-  //         `Invalid decrypted code point ${code}. RSA keys may be too small.`
-  //       );
-  //     }
-
-  //     return String.fromCodePoint(code);
-  //   })
-  //   .join("");
 
   const bytes = encryptedMessage.split(",").map((part) => {
     const c = BigInt(part);

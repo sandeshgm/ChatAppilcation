@@ -179,7 +179,7 @@ export default function Register() {
               className={`block w-full px-3 py-2 mt-1 border rounded-lg shadow-sm sm:text-sm ${
                 errors.gender ? "border-red-500" : "border-gray-300"
               }`}
-              {...register("gender")}
+              {...register("gender")}s
             >
               <option value="">Select Gender</option>
               <option value="male">Male</option>

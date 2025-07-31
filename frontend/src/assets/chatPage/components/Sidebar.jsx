@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import { FaSearch } from "react-icons/fa";
 import { IoIosArrowBack } from "react-icons/io";
 import { FiLogOut } from "react-icons/fi";
@@ -24,21 +24,63 @@ const Sidebar = ({ onSelectedUser }) => {
     selectedConversation,
     setSelectedConversation,
   } = userConversation();
-  const { socket } = useSocketContext();
+  const { onlineUser, socket } = useSocketContext();
+  const [unreadMap, setUnreadMap] = useState({});
+
+  const onlineUserSet = new Set(onlineUser);
+
+  //console.log("Online user from socket:", onlineUser);
+
+  // useEffect(() => {
+  //   if (!socket) return;
+  //   const handleNewMessage = (newMessage) => {
+  //     console.log("received message from socket", newMessage);
+  //     setNewMessageUsers(newMessage);
+  //   };
+  //   return () => {
+  //     socket?.off("newMessage", handleNewMessage);
+  //   };
+  // }, [socket, messages]);
 
   useEffect(() => {
     if (!socket) return;
+
     const handleNewMessage = (newMessage) => {
       console.log("received message from socket", newMessage);
-      setNewMessageUsers(newMessage);
+
+      // Only update if message is not from the currently selected user
+      if (selectedConversation?._id !== newMessage.senderId) {
+        setUnreadMap((prev) => ({
+          ...prev,
+          [newMessage.senderId]: (prev[newMessage.senderId] || 0) + 1,
+        }));
+      }
     };
+
+    socket.on("newMessage", handleNewMessage);
+
     return () => {
-      socket?.off("newMessage", handleNewMessage);
+      socket.off("newMessage", handleNewMessage);
     };
-  }, [socket, messages]);
+  }, [socket, selectedConversation]);
+
+  //clear notification when user click
+  const handleUserClick = (user) => {
+    onSelectedUser(user);
+    setSelectedConversation(user);
+    setSelectedUserId(user._id);
+
+    setUnreadMap((prev) => {
+      const newMap = { ...prev };
+      delete newMap[user._id];
+      return newMap;
+    });
+  };
 
   //show user with where you chatted
   useEffect(() => {
+    if (!authUser || !socket) return;
+
     const chatUserHandler = async () => {
       setLoading(true);
       try {
@@ -56,7 +98,7 @@ const Sidebar = ({ onSelectedUser }) => {
       }
     };
     chatUserHandler();
-  }, []);
+  }, [authUser, socket, selectedConversation]);
 
   // handle search submit
   const handleSearchSubmit = async (e) => {
@@ -90,12 +132,12 @@ const Sidebar = ({ onSelectedUser }) => {
   };
 
   //show which user is selected
-  const handleUserClick = (user) => {
-    onSelectedUser(user);
-    setSelectedConversation(user);
-    setSelectedUserId(user._id);
-    setNewMessageUsers("");
-  };
+  // const handleUserClick = (user) => {
+  //   onSelectedUser(user);
+  //   setSelectedConversation(user);
+  //   setSelectedUserId(user._id);
+  //   setNewMessageUsers("");
+  // };
 
   //back from search result
   const handleSearchBack = () => {
@@ -138,41 +180,16 @@ const Sidebar = ({ onSelectedUser }) => {
   return (
     <div className="flex flex-col h-full px-4 py-2 border-r-2 border-gray-300">
       {loading && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-auto">
-    <div className="absolute inset-0 backdrop-blur-sm bg-white/30"></div>
-    <div className="relative">
-      <div className="loading loading-spinner loading-lg text-black"></div>
-    </div>
-  </div>
-)}
-
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-auto">
+          <div className="absolute inset-0 backdrop-blur-sm bg-white/30"></div>
+          <div className="relative">
+            <div className="loading loading-spinner loading-lg text-black"></div>
+          </div>
+        </div>
+      )}
 
       {/* Top bar */}
       <div className="mb-4 flex items-center gap-4">
-        {/* <form
-          onSubmit={handleSearchSubmit}
-          className="flex items-center bg-white rounded-full px-2 py-1 shadow-md w-full sm:max-w-sm"
-          style={{ width: "70%" }}
-        >
-          <input
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            type="text"
-            className="flex-grow px-4 py-2 text-black bg-transparent outline-none rounded-s-full placeholder-gray-500"
-            placeholder="Search user"
-          />
-          <button
-            type="submit"
-            className="ml-2 w-9 h-9 flex items-center justify-center rounded-full bg-sky-700 hover:bg-gray-950 text-white transition-all"
-          >
-            {loading ? (
-              <span className="loading loading-spinner loading-sm text-white"></span>
-            ) : (
-              <FaSearch />
-            )}
-          </button>
-        </form> */}
-
         <form onSubmit={handleSearchSubmit} className="relative w-full">
           <input
             value={searchInput}
@@ -214,9 +231,20 @@ const Sidebar = ({ onSelectedUser }) => {
                   }`}
               >
                 {/*Socket is Online */}
-                <div className="avatar">
-                  <div className="w-12 rounded-full">
-                    <img src={user?.profilePic} alt="user.img" />
+                <div
+                  className={`avatar ${
+                    onlineUserSet.has(user._id) ? "online" : ""
+                  }`}
+                >
+                  <div className="relative w-12 h-12">
+                    <img
+                      src={user?.profilePic}
+                      alt="user.img"
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                    {onlineUserSet.has(user._id) && (
+                      <span className="absolute top-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                    )}
                   </div>
                 </div>
                 <div className="flex flex-col flex-1">
@@ -243,9 +271,21 @@ const Sidebar = ({ onSelectedUser }) => {
                       : "hover:bg-sky-100"
                   }`}
               >
-                <div className="avatar">
-                  <div className="w-12 rounded-full">
-                    <img src={user?.profilePic} alt="user.img" />
+                {/*Socket is online */}
+                <div
+                  className={`avatar ${
+                    onlineUserSet.has(user._id) ? "online" : ""
+                  }`}
+                >
+                  <div className="relative w-12 h-12">
+                    <img
+                      src={user?.profilePic}
+                      alt="user.img"
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                    {onlineUserSet.has(user._id) && (
+                      <span className="absolute top-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                    )}
                   </div>
                 </div>
                 <div className="flex flex-col flex-1">
@@ -253,16 +293,13 @@ const Sidebar = ({ onSelectedUser }) => {
                 </div>
 
                 {/*notification */}
-                {/* <div>
-                  {newMessageUsers.receiverId === authUser._id &&
-                  newMessageUsers.senderId === user._id ? (
-                    <div className="founded-full bg-green-700 text-sm text-white px-[4px}">
-                      +1
+
+                {unreadMap[user._id] > 0 &&
+                  (selectedUserId === null || selectedUserId !== user._id) && (
+                    <div className="rounded-full bg-green-700 text-xs text-white px-2 py-0.5">
+                      +{unreadMap[user._id]}
                     </div>
-                  ) : (
-                    <></>
                   )}
-                </div> */}
               </div>
               <div className="divider px-3"></div>
             </div>

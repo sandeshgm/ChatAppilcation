@@ -7,8 +7,8 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["https://sgm-chatapp.onrender.com"],
-    //origin: ["http://localhost:5173"],
+    //origin: ["https://sgm-chatapp.onrender.com"],
+    origin: ["http://localhost:5173"],
     methods: ["GET", "POST"],
   },
 });
@@ -26,7 +26,7 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     delete userSocketmap[userId],
-      io.emit("getOnlineUsersOn", Object.keys(userSocketmap));
+      io.emit("getOnlineUsers", Object.keys(userSocketmap));
   });
 });
 

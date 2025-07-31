@@ -35,11 +35,12 @@ export default function Login() {
       if (!privateKey) {
         try {
           const { publicKey, privateKey } = await generateRSAKeys();
+          console.log("public key: ", publicKey);
           setLoading(true);
           if (publicKey && privateKey) {
             localStorage.setItem("privateKey", privateKey);
-            //console.log("new public key:", publicKey);
-            //console.log("new private key:", privateKey);
+            console.log(" public key:", publicKey);
+            console.log(" private key:", privateKey);
 
             await axios.post("/api/auth/updatePublicKey", {
               userId: data._id,
